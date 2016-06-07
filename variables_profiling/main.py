@@ -94,40 +94,25 @@ if __name__ == "__main__":
 
             var = variable[0]
             profile = []
-            payload = [{"name": "variable", "value": var}]
+            payload = [{"name": "variable", "value": var}, {"name": "format", "value": "True"}]
             logging.debug(payload)
             url = 'http://%s:%s/mining/query/WP_VARIABLE_SUMMARY' % (host, port)
             logging.info(" Summary Statistics %s variable %s ..." % (var, url))
             response = requests.post(url, json=payload, stream=True)
             if response.status_code != 200:
                 raise Exception("Interval error")
-            lines = response.iter_lines()
-            datasetStatistics = [next(lines)];
-            for line in lines:
-                if line:
-                    datasetStatistics.append(json.loads(line.lstrip()))
-            response.close()
-            logging.debug(datasetStatistics)
-            profile.append(datasetStatistics)
+            profile.append(json.loads(response.json()))
 
             if variable[1] != "text":
 
-                payload = [{"name": "column1", "value": var}, {"name": "nobuckets", "value": "10"}]
+                payload = [{"name": "column1", "value": var}, {"name": "nobuckets", "value": "10"}, {"name": "format", "value": "True"}]
                 logging.info(payload)
                 url = 'http://%s:%s/mining/query/WP_VARIABLE_HISTOGRAM' % (host, port)
                 logging.info(" Dataset Statistics %s variable %s ..." % (var, url))
                 response = requests.post(url, json=payload, stream=True)
                 if response.status_code != 200:
                     raise Exception("Interval error")
-                datasetStatistics = [];
-                lines = response.iter_lines()
-                datasetStatistics.append(next(lines))  # schema
-                for line in lines:
-                    if line:
-                        datasetStatistics.append(json.loads(line.lstrip()))
-                response.close()
-                logging.debug(datasetStatistics)
-                profile.append(datasetStatistics)
+                profile.append(json.loads(response.json()))
 
                 byvars = ["DX_bl", "AGE", "PTGENDER", "APOE"]
                 for byvar in byvars:
@@ -136,7 +121,8 @@ if __name__ == "__main__":
                     payload = [
                         {"name": "column1", "value": var},
                         {"name": "column2", "value": byvar},
-                        {"name": "nobuckets", "value": "10"}
+                        {"name": "nobuckets", "value": "10"},
+                        {"name": "format", "value": "True"}
                     ]
                     logging.info(payload)
                     url = 'http://%s:%s/mining/query/WP_VARIABLES_HISTOGRAM' % (host, port)
@@ -144,17 +130,9 @@ if __name__ == "__main__":
                     logging.info(" Dataset Statistics %s - %s variable %s ..." % (var, byvar, url))
                     if response.status_code != 200:
                         raise Exception("Interval error")
-                    datasetStatistics = [];
-                    lines = response.iter_lines()
-                    datasetStatistics.append(next(lines))  # schema
-                    for line in lines:
-                        if line:
-                            datasetStatistics.append(json.loads(line.lstrip()))
-                    response.close()
-                    logging.debug(datasetStatistics)
-                    profile.append(datasetStatistics)
+                    profile.append(json.loads(response.json()))
 
-            # logging.debug(profile)
+            logging.info(profile)
             # # original
             resultpath = os.path.join(outputdir, var)
             os.makedirs(resultpath)
@@ -167,44 +145,9 @@ if __name__ == "__main__":
             #         oresultfp.close()
 
             # specs
-            result = []
-            i = 0
-            summary_statistics = {}
-            summary_statistics["dataType"] = "SummaryStatistics"
-            summary_statistics["code"] = var
-            summary_statistics["count"] = profile[0][1][0]
-            summary_statistics["average"] = profile[0][1][1]
-            summary_statistics["min"] = profile[0][1][2]
-            summary_statistics["max"] = profile[0][1][3]
-            summary_statistics["std"] = profile[0][1][4]
-            result.append(summary_statistics)
-            i += 1
-            if variable[1] != "text":  # not categorical
-
-                for byvar in byvars:
-                    categories = []
-                    headers = []
-                    values = []
-                    iterres = iter(profile[i])
-                    next(iterres)
-                    for r in iterres:
-                        categories.append(r[1])
-                        headers.append((r[3] - r[2])/2)
-                        values.append(r[4])
-                    dataset_statistics = {}
-                    dataset_statistics["code"] = var
-                    dataset_statistics["dataType"] = "DatasetStatistic"
-                    name = "Count " + var + " values"
-                    dataset_statistics["dataset"] = {
-                        "data": {"categories": categories, "header": headers, "shape": "vector",
-                                 "value": values}, "name": name}
-                    dataset_statistics["label"] = "Histogram - %s" % byvar
-                    result.append(dataset_statistics)
-                    i = +1
-
             resultfp = open(os.path.join(resultpath, "response.json"), 'a+')
             try:
-                resultfp.write(json.dumps(result, sort_keys=True, indent=4, separators=(',', ': ')))
+                resultfp.write(json.dumps(profile, sort_keys=True, indent=4, separators=(',', ': ')))
                 logging.info("Response stored.")
             finally:
                 if resultfp:

@@ -1,0 +1,11 @@
+[
+    {
+        "average": 0.5584642233856894,
+        "code": "APOE4_bl",
+        "count": 573,
+        "dataType": "SummaryStatistics",
+        "max": 2.0,
+        "min": 0.0,
+        "std": 0.6413647060899097
+    }
+]
