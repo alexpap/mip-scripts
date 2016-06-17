@@ -98,7 +98,7 @@ if __name__ == "__main__":
                 raise Exception("Interval error")
             profile.append(response.json())
 
-            if variable[1] != "text":
+            if variable[1] != "text" and variable[0] not in ["Month_bl", "Years_bl"]:
 
                 payload = [{"name": "column1", "value": var}, {"name": "nobuckets", "value": "10"}, {"name": "format", "value": "True"}]
                 logging.info(payload)
