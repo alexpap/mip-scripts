@@ -70,12 +70,7 @@ if __name__ == "__main__":
         if response.status_code != 200:
             raise Exception("Interval error")
 
-        variables = [];
-        lines = response.iter_lines()
-        next(lines)
-        for line in lines:
-            if line:
-                variables.append(json.loads(line.lstrip()))
+        variables = response.json()['variables']
         logging.info("'#Variables : %d" % len(variables))
         logging.debug(variables)
         try:
@@ -101,7 +96,7 @@ if __name__ == "__main__":
             response = requests.post(url, json=payload, stream=True)
             if response.status_code != 200:
                 raise Exception("Interval error")
-            profile.append(json.loads(response.json()))
+            profile.append(response.json())
 
             if variable[1] != "text":
 
@@ -112,7 +107,7 @@ if __name__ == "__main__":
                 response = requests.post(url, json=payload, stream=True)
                 if response.status_code != 200:
                     raise Exception("Interval error")
-                profile.append(json.loads(response.json()))
+                profile.append(response.json())
 
                 byvars = ["DX_bl", "AGE", "PTGENDER", "APOE"]
                 for byvar in byvars:
@@ -130,9 +125,9 @@ if __name__ == "__main__":
                     logging.info(" Dataset Statistics %s - %s variable %s ..." % (var, byvar, url))
                     if response.status_code != 200:
                         raise Exception("Interval error")
-                    profile.append(json.loads(response.json()))
+                    profile.append(response.json())
 
-            logging.info(profile)
+            # logging.info(profile)
             # # original
             resultpath = os.path.join(outputdir, var)
             os.makedirs(resultpath)
